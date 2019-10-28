@@ -55,7 +55,6 @@ class ViewConcertListingTest extends TestCase
 
         $response = $this->get('/concerts/'. $concert->id);
 
-        //400
         $response->assertStatus(404);
     }
 
