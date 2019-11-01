@@ -35,6 +35,8 @@ class PurchaseTicketsTest extends TestCase
             'ticket_price' => 3250,
         ]);
 
+        $concert->addTickets(3);
+
         $response = $this->orderTickets($concert, [
             'email' => 'john@example.com',
             'ticket_quantity' => 3,
@@ -53,9 +55,9 @@ class PurchaseTicketsTest extends TestCase
     /** @test */
     public function cannot_purchase_tickets_to_an_unpublished_concert(){
 
-        // $this->disableExceptionHandling();
         // $this->withExceptionHandling();
         $concert = factory(Concert::class)->states('unpublished')->create();
+        $concer->addTickets(3);
 
         $response = $this->orderTickets($concert, [
             'email' => 'john@example.com',
@@ -75,6 +77,8 @@ class PurchaseTicketsTest extends TestCase
         $concert = factory(Concert::class)->states('published')->create([
             'ticket_price' => 3250,
         ]);
+
+        $concert->addTickets(3);
 
         $response = $this->orderTickets($concert, [
             'email' => 'john@example.com',
@@ -104,6 +108,27 @@ class PurchaseTicketsTest extends TestCase
     }
 
     /** @test */
+    public function cannot_purchase_more_tickets_than_remain(){
+
+        // $this->withoutExceptionHandling();
+        $concert = factory(Concert::class)->states('published')->create();
+
+        $concert->addTickets(50);
+
+        $response = $this->orderTickets($concert, [
+            'email' => 'john@example.com',
+            'ticket_quantity' => 51,
+            'payment_token' => $this->paymentGateway->getValidTestToken(),
+        ]);
+
+        $response->assertStatus(422);
+        $order = $concert->orders()->where('email', 'john@example.com')->first();
+        $this->assertNull($order);
+        $this->assertEquals(0, $this->paymentGateway->totalCharges());
+        $this->assertEquals(50, $concert->ticketsRemaining());
+    }
+
+    /** @test */
     public function email_must_be_valid_to_purchase_ticket(){
 
         $concert = factory(Concert::class)->states('published')->create();
@@ -116,7 +141,6 @@ class PurchaseTicketsTest extends TestCase
 
         $response->assertJsonValidationErrors('email');
 
-        // dd($response->json());
     }
 
     /** @test */
@@ -131,7 +155,6 @@ class PurchaseTicketsTest extends TestCase
 
         $response->assertJsonValidationErrors('ticket_quantity');
 
-        // dd($response->json());
     }
 
     /** @test */
@@ -162,5 +185,7 @@ class PurchaseTicketsTest extends TestCase
         $response->assertJsonValidationErrors('payment_token');
         // dd($response->json());
     }
+
+
 
 }
