@@ -31,6 +31,7 @@ class PurchaseTicketsTest extends TestCase
     /** @test */
     public function customer_can_purchase_tickets_to_a_published_concert(){
 
+        // $this->withoutExceptionHandling();
         $concert = factory(Concert::class)->states('published')->create([
             'ticket_price' => 3250,
         ]);
@@ -45,6 +46,12 @@ class PurchaseTicketsTest extends TestCase
 
         $response->assertStatus(201);
 
+        $response->assertJsonFragment([
+            'email' => 'john@example.com',
+            'ticket_quantity' => 3,
+            'amount' => 9750,
+        ]);
+
         $this->assertEquals(9750, $this->paymentGateway->totalCharges());
 
         $order = $concert->orders()->where('email', 'john@example.com')->first();
@@ -57,7 +64,7 @@ class PurchaseTicketsTest extends TestCase
 
         // $this->withExceptionHandling();
         $concert = factory(Concert::class)->states('unpublished')->create();
-        $concer->addTickets(3);
+        $concert->addTickets(3);
 
         $response = $this->orderTickets($concert, [
             'email' => 'john@example.com',
