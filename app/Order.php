@@ -9,6 +9,20 @@ class Order extends Model
 {
     protected $guarded = [];
 
+    public static function forTickets($tickets, $email, $amount){
+
+        $order = self::create([
+            'email' => $email,
+            'amount' => $amount,
+        ]);
+
+        foreach ($tickets as $ticket) {
+            $order->tickets()->save($ticket);
+        }
+
+        return $order;
+    }
+
     public function concert(){
         return $this->belongsTo(Concert::class);
     }
@@ -33,7 +47,8 @@ class Order extends Model
          return[
             'email' => $this->email,
             'ticket_quantity' => $this->ticketQuantity(),
-            'amount' => $this->ticketQuantity() * $this->concert->ticket_price,
+            // 'amount' => $this->ticketQuantity() * $this->concert->ticket_price,
+            'amount' => $this->amount,
          ];
     }
 }
